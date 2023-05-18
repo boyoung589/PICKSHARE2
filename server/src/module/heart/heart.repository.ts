@@ -1,9 +1,10 @@
 import { NotFoundException } from "@nestjs/common";
-import { EntityRepository, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { User } from "../user/user.entity";
 import { Heart } from "./heart.entity";
+import { CustomRepository } from "../typeorm-ex.decorator";
 
-@EntityRepository(Heart)
+@CustomRepository(Heart)
 export class HeartRepository extends Repository<Heart> {
 	async postHeart( user: User, board_id: number): Promise<Heart[]> {
 		const findAlreadyExist = await this.find({

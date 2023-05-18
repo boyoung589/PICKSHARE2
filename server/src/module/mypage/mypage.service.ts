@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from '../user/user.repository';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PasswordCheckDto } from './dto/passwordCheck.dto';
@@ -13,15 +12,10 @@ import { CommentRepository } from '../comment/comment.repository';
 @Injectable()
 export class MypageService {
   constructor(
-    @InjectRepository(UserRepository)
     private userRepository: UserRepository,
-    @InjectRepository(BoardRepository)
     private boardRepository: BoardRepository,
-    @InjectRepository(HeartRepository)
     private heartRepository: HeartRepository,
-    @InjectRepository(FollowRepository)
     private followRepository: FollowRepository,
-    @InjectRepository(CommentRepository)
     private commentRepository: CommentRepository,
   ) {}
 

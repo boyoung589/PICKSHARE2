@@ -52,7 +52,7 @@ export class Board extends BaseEntity {
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date;
 
-  @ManyToOne((type) => User, (user) => user.boards, { eager: false })
+  @ManyToOne(() => User, (user) => user.boards, { eager: false })
   @JoinColumn({ name: 'user_id' })
   user: User;
 

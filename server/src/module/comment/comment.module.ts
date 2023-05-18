@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { CommentController } from './comment.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommentRepository } from './comment.repository';
 import { UserRepository } from '../user/user.repository';
 import { BoardRepository } from '../board/board.repository';
 import { PassportModule } from '@nestjs/passport';
+import { TypeOrmExModule } from '../typeorm-ex.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
+    TypeOrmExModule.forCustomRepository([
       CommentRepository,
       UserRepository,
       BoardRepository,

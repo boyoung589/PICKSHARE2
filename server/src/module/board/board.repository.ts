@@ -1,9 +1,10 @@
-import { EntityRepository, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { User } from '../user/user.entity';
 import { Board } from './board.entity';
 import { CreateBoardDto } from './dto/create-board.dto';
+import { CustomRepository } from '../typeorm-ex.decorator';
 
-@EntityRepository(Board)
+@CustomRepository(Board)
 export class BoardRepository extends Repository<Board> {
   async createBoard(
     createBoardDto: CreateBoardDto,

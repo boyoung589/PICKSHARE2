@@ -1,5 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/user.entity';
 import { Heart } from './heart.entity';
 import { HeartRepository } from './heart.repository';
@@ -7,7 +6,6 @@ import { HeartRepository } from './heart.repository';
 @Injectable()
 export class HeartService {
 	constructor(
-		@InjectRepository(HeartRepository)
 		private heartRepository: HeartRepository,
 	) {}
 

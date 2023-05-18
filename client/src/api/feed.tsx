@@ -1,7 +1,11 @@
 /*eslint-disable*/
 import { AxiosPromise } from 'axios';
 import api from './index';
-import { Feedlist, FollowerListType, FollowingListType } from '../types/feedType';
+import {
+  Feedlist,
+  FollowerListType,
+  FollowingListType,
+} from '../types/feedType';
 
 const feedApi = {
   getMainFeed: (start: number, end: number): AxiosPromise<Feedlist[]> => {

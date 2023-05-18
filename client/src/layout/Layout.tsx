@@ -13,10 +13,10 @@ const Layout = () => {
       </Header>
       <Main>
         <Outlet />
+        <FooterDiv>
+          <Footer />
+        </FooterDiv>
       </Main>
-      <FooterDiv>
-        <Footer />
-      </FooterDiv>
     </Container>
   );
 };
@@ -33,11 +33,7 @@ const Container = styled.div`
 const Header = styled.div`
   height: 70px;
 `;
-const Main = styled.div`
-  overflow: auto;
-  height: 100vh;
-`;
+const Main = styled.div``;
 const FooterDiv = styled.div`
-  background: #f5f5f5;
-  overflow: auto;
+  background: white;
 `;

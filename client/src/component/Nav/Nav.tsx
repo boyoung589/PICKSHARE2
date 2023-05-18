@@ -3,11 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  deleteBoardInfo,
-  deleteUserInfo,
-  renderAction,
-} from '../../redux/actions';
+import { deleteUserInfo } from '../../redux/actions';
 
 import theme from '../../styles/theme';
 import { BiHome } from 'react-icons/bi';

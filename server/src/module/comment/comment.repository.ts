@@ -1,8 +1,9 @@
-import { EntityRepository, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Comment } from './comment.entity';
 import { CreateCommentDto } from './dto/create-comment-dto';
+import { CustomRepository } from '../typeorm-ex.decorator';
 
-@EntityRepository(Comment)
+@CustomRepository(Comment)
 export class CommentRepository extends Repository<Comment> {
   async createComment(
     id: number,

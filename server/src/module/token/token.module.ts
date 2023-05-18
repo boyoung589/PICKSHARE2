@@ -3,13 +3,13 @@
 import { Module } from '@nestjs/common';
 import { TokenService } from './token.service';
 import { PassportModule } from '@nestjs/passport';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserRepository } from '../user/user.repository';
 import { TokenController } from './token.controller';
+import { TypeOrmExModule } from '../typeorm-ex.module';
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    TypeOrmModule.forFeature([UserRepository]),
+    TypeOrmExModule.forCustomRepository([UserRepository]),
   ],
   controllers: [TokenController],
   providers: [TokenService],

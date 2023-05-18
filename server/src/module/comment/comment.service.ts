@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/user.entity';
 import { UserRepository } from '../user/user.repository';
 import { CommentRepository } from './comment.repository';
@@ -8,9 +7,7 @@ import { CreateCommentDto } from './dto/create-comment-dto';
 @Injectable()
 export class CommentService {
   constructor(
-    @InjectRepository(CommentRepository)
     private commentRepository: CommentRepository,
-    @InjectRepository(UserRepository)
     private userRepository: UserRepository,
   ) {}
 

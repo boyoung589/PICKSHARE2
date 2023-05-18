@@ -3,10 +3,7 @@ import styled from 'styled-components';
 import feedApi from '../../../api/feed';
 import { UserInfoData, followerListProps } from '../../../types/feedType';
 
-export default function FollowerList({
-  followerNickname,
-  setFollow,
-}: followerListProps) {
+export default function FollowerList({ followerNickname }: followerListProps) {
   const [userlist, setUserlist] = useState({
     id: 0,
     nickname: '',

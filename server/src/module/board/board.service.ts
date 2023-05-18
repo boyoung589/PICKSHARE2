@@ -1,25 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Lock } from './board-state.union';
 import { Board } from './board.entity';
 import { BoardRepository } from './board.repository';
 import { UserRepository } from '../user/user.repository';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { User } from '../user/user.entity';
-import { threadId } from 'worker_threads';
 import { HeartRepository } from '../heart/heart.repository';
 import { CommentRepository } from '../comment/comment.repository';
 
 @Injectable()
 export class BoardService {
   constructor(
-    @InjectRepository(BoardRepository)
     private boardRepository: BoardRepository,
-    @InjectRepository(UserRepository)
     private userRepository: UserRepository, // private을 사용하지 않으면 다른 컴포넌트에서 해당 값을 수정할 수 있다.
-    @InjectRepository(HeartRepository)
     private heartRepository: HeartRepository,
-    @InjectRepository(CommentRepository)
     private commentRepository: CommentRepository,
   ) {}
 

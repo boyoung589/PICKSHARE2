@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Board } from '../board/board.entity';
 import { BoardRepository } from '../board/board.repository';
 import { User } from '../user/user.entity';
@@ -7,7 +6,6 @@ import { User } from '../user/user.entity';
 @Injectable()
 export class FeedService {
   constructor(
-    @InjectRepository(BoardRepository)
     private boardRepository: BoardRepository,
   ) {}
 

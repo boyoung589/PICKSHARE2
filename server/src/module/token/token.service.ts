@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PassportModule, PassportStrategy } from '@nestjs/passport';
-import { InjectRepository } from '@nestjs/typeorm';
+import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { User } from '../user/user.entity';
 import { UserRepository } from '../user/user.repository';
@@ -13,7 +12,6 @@ dotenv.config();
 export class TokenService extends PassportStrategy(Strategy) {
   //PassportStrategy사용이유: JWT Strategy를 사용하기 위해 (passport-jwt Node.js package)
   constructor(
-    @InjectRepository(UserRepository)
     private userRepository: UserRepository, // 유효성 검사 후 데이터베이스(UserRepository)에서 데이터를 찾기 위해
   ) {
     super({

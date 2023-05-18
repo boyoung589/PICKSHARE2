@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common';
 import { MypageService } from './mypage.service';
 import { MypageController } from './mypage.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserRepository } from '../user/user.repository';
 import { PassportModule } from '@nestjs/passport';
 import { BoardRepository } from '../board/board.repository';
 import { HeartRepository } from '../heart/heart.repository';
 import { FollowRepository } from '../follow/follow.repository';
 import { CommentRepository } from '../comment/comment.repository';
+import { TypeOrmExModule } from '../typeorm-ex.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
+    TypeOrmExModule.forCustomRepository([
       UserRepository,
       BoardRepository,
       HeartRepository,

@@ -1,17 +1,16 @@
 import { Module } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserRepository } from './user.repository';
 import { TokenService } from '../token/token.service';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { Connection } from 'typeorm';
+import { TypeOrmExModule } from '../typeorm-ex.module';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }), //UseGuards때문
-    TypeOrmModule.forFeature([UserRepository]),
+    TypeOrmExModule.forCustomRepository([UserRepository]),
     JwtModule.register({
       secret: process.env.SECRET || process.env.REFRESH, // 토큰을 생성하기 위해
       signOptions: {

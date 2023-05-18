@@ -1,9 +1,10 @@
 import { NotFoundException } from "@nestjs/common";
-import { EntityRepository, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { User } from "../user/user.entity";
 import { Follow } from "./follow.entity";
+import { CustomRepository } from "../typeorm-ex.decorator";
 
-@EntityRepository(Follow)
+@CustomRepository(Follow)
 export class FollowRepository extends Repository<Follow> {
     async postFollowing(user: User, nickname: string): Promise<Follow[]> {
         const findAlreadyExist = await this.find({where: {

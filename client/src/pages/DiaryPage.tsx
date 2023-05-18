@@ -45,14 +45,18 @@ export interface FormValues {
 }
 
 const DiaryPage = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [calOpen, setCalOpen] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [calOpen, setCalOpen] = useState(false);
+  const outSection = useRef();
+  const transDate = format(selectedDate, 'yyyy.MM.dd');
+
   const [rendering, setRendering] = useState(false);
   const [pickWay, setPickWay] = useState(0); //책갈피 선택 0: 그림 / 1: 사진
   const [lockBtn, setLockBtn] = useState(false);
-  const file: any = useRef();
+
   const { boardInfo } = useSelector(
     (boardReducer: any) => boardReducer.boardInfo
   );
@@ -63,9 +67,6 @@ const DiaryPage = () => {
   const { isDiaryOn } = useSelector(
     (diaryReducer: any) => diaryReducer.diaryInfo
   );
-  const { isModalOn } = useSelector(
-    (modalReducer: any) => modalReducer.modalInfo
-  );
   const [userImg, setUserImg] = useState('');
   const [boardInput, setBoardInput] = useState<FormValues>({
     title: '',
@@ -74,7 +75,7 @@ const DiaryPage = () => {
     mood: 0,
     lock: 'UNLOCK',
     content: '',
-    date: format(selectedDate, 'yyyy.MM.dd'),
+    date: transDate,
   });
 
   const editModeHandler = () => {
@@ -339,7 +340,7 @@ const DiaryPage = () => {
                   className="diary dates"
                   onClick={() => setCalOpen(!calOpen)}
                 >
-                  {format(selectedDate, 'yyyy.MM.dd')}
+                  {transDate}
                   {` `}📆
                 </SelectedDay>
                 {calOpen ? (
@@ -373,6 +374,12 @@ const DiaryPage = () => {
                 placeholder="내용을 입력해 주세요."
                 onChange={handleBoardInputValue}
                 defaultValue={boardInput.content}
+                ref={outSection}
+                onClick={(e) => {
+                  if (outSection.current === e.target) {
+                    setCalOpen(false);
+                  }
+                }}
               />
               <div className="save-btns">
                 <button className="diary save-btn" onClick={cancelButton}>
@@ -708,6 +715,7 @@ const SubBookMarkContent = styled.button<{ Picture?: any }>`
 
 const CalWrapper = styled.div`
   position: absolute;
+  top: 70px;
 `;
 
 const SelectedDay = styled.div`

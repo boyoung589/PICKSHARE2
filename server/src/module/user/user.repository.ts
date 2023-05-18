@@ -1,4 +1,4 @@
-import { EntityRepository, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { SignUpDto } from './dto/singup-user.dto';
 import { User } from './user.entity';
 import * as bcrypt from 'bcryptjs';
@@ -6,8 +6,9 @@ import {
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { CustomRepository } from '../typeorm-ex.decorator';
 
-@EntityRepository(User)
+@CustomRepository(User)
 export class UserRepository extends Repository<User> {
   // 일반 회원가입(DB생성 및 저장)
   async createUser(
