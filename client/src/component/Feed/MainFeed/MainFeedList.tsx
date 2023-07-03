@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import styled from 'styled-components';
-import { BsSuitHeart } from 'react-icons/bs';
-import { BsSuitHeartFill } from 'react-icons/bs';
+import { FaRegHeart, FaHeart } from 'react-icons/fa';
 import feedApi from '../../../api/feed';
 import { useSelector } from 'react-redux';
 import { FaRegCommentDots } from 'react-icons/fa';
@@ -11,7 +10,7 @@ import boardApi from '../../../api/board';
 import {
   addBoardInfo,
   deleteBoardInfo,
-  renderAction,
+  diaryOffAction,
 } from '../../../redux/actions';
 import { RootState } from '../../../redux';
 import { MainFeedListProps } from '../../../types/feedType';
@@ -27,6 +26,7 @@ export default function MainFeedList({
   commentNum,
   title,
   isRender,
+  personalFeed,
 }: MainFeedListProps) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -35,22 +35,31 @@ export default function MainFeedList({
   );
 
   const [heart, setHeart] = useState(false);
-  const postHeart = async () => {
-    console.log(heart, '하트');
-    return await feedApi.postHeart(userInfo, id, accessToken).then(() => {
-      setHeart(true);
-      dispatch(renderAction);
-      console.log(isRender, '랜더');
-    });
-  };
+  const [heartNumChV, setHeartNumChV] = useState(false);
+  const [hearNumRen, setHeartNumRen] = useState(false);
 
-  const deleteHeart = async () => {
-    console.log(heart, '하트');
-    return await feedApi.deleteHeart(userInfo, id, accessToken).then(() => {
-      setHeart(false);
-      dispatch(renderAction);
-      console.log(isRender, '랜더');
-    });
+  const heartNumState = heartNumChV
+    ? Number(heartNum) - 1
+    : Number(heartNum) + 1;
+
+  const debounce = (cb: (arg: boolean) => void, delay: number) => {
+    let timer: string | number | NodeJS.Timeout;
+    return (arg: boolean) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => cb(arg), delay);
+    };
+  };
+  const heartValue = useCallback(
+    debounce(async (heart: boolean) => {
+      if (!heart) return await feedApi.postHeart(userInfo, id, accessToken);
+      else return await feedApi.deleteHeart(userInfo, id, accessToken);
+    }, 1000),
+    []
+  );
+  const heartChangeButton = () => {
+    setHeart((pre) => !pre);
+    setHeartNumRen((pre) => !pre);
+    heartValue(heart);
   };
 
   const moveToUsersFeed = (e: string) => {
@@ -62,6 +71,10 @@ export default function MainFeedList({
     navigate('/login');
   };
 
+  const isDiaryOffHandler = () => {
+    dispatch(diaryOffAction);
+  };
+
   const moveToViewBoard = async (
     e: React.MouseEvent<HTMLDivElement, MouseEvent>
   ) => {
@@ -71,7 +84,12 @@ export default function MainFeedList({
     const targetId = target.id;
     await boardApi.getBoardById(Number(targetId)).then((result) => {
       dispatch(addBoardInfo(result.data));
-      navigate('/diary');
+      isDiaryOffHandler();
+      navigate('/diary', {
+        state: {
+          fromMainFeedList: true,
+        },
+      });
     });
   };
 
@@ -80,13 +98,17 @@ export default function MainFeedList({
       const getHeart = async () => {
         //하트 기록이 있는지 서치, 하트가 있으면, 하트 트루, 없 false
         await feedApi.getHeart(id, accessToken).then((result) => {
-          result.data === 1 ? setHeart(true) : setHeart(false);
+          if (result.data === 1) {
+            setHeart(true);
+            setHeartNumChV(true);
+          } else {
+            setHeart(false);
+          }
         });
       };
       getHeart().catch((err) => console.log(err));
     }
   }, [isRender]);
-
   const urlSlice = window.location.pathname.split('/')[2];
 
   useEffect(() => {
@@ -116,42 +138,29 @@ export default function MainFeedList({
               <Title>{title}</Title>
             ) : (
               <UserNickname
+                Personal={personalFeed ? true : false}
                 className="nickname"
                 onClick={() => moveToUsersFeed(nickname)}
               >
                 {nickname}
               </UserNickname>
             )}
-            <DateDiv>{date}</DateDiv>
+            <DateDiv Personal={personalFeed ? true : false}>{date}</DateDiv>
           </UserDiv>
         </ContentRightDiv>
         <ContentLeftDiv>
-          {isLogin === false ? (
-            <HeartDiv>
-              <Button onClick={clickWithOutLoggedin}>
-                <BsSuitHeart style={{ strokeWidth: 1 }} size="25" />
-              </Button>
-              <Num>{heartNum}</Num>
-            </HeartDiv>
-          ) : heart === false ? (
-            <Button onClick={postHeart}>
-              <BsSuitHeart style={{ strokeWidth: 1 }} size="25" />
-              <Num>{heartNum}</Num>
-            </Button>
-          ) : (
-            <Button onClick={deleteHeart}>
-              <BsSuitHeartFill
-                style={{ strokeWidth: 1 }}
-                size="25"
-                color="red"
-              />
-              <Num>{heartNum}</Num>
-            </Button>
-          )}
-          <Button>
-            <FaRegCommentDots style={{ strokeWidth: 1 }} size="27" />
+          <HeartDiv>
+            <HeartButton
+              onClick={isLogin ? heartChangeButton : clickWithOutLoggedin}
+            >
+              {heart ? <FilledHeart /> : <OutLineHeart />}
+              <Num>{!hearNumRen ? heartNum : heartNumState}</Num>
+            </HeartButton>
+          </HeartDiv>
+          <CommentDiv>
+            <CommentIcon />
             <Num>{commentNum}</Num>
-          </Button>
+          </CommentDiv>
         </ContentLeftDiv>
       </ContentDiv>
     </Div>
@@ -159,14 +168,12 @@ export default function MainFeedList({
 }
 
 const Div = styled.div`
-  // 카드 크기
   flex: 1 1 auto;
   background-color: white;
   box-shadow: 4px 4px 4px rgb(0, 0, 0, 0.25);
   border-radius: 1rem;
   margin-bottom: 10px;
   &:hover {
-    scale: 1.1;
     cursor: pointer;
     border: solid violet 2px;
   }
@@ -174,6 +181,9 @@ const Div = styled.div`
     width: 48%;
     flex: 0 auto;
     margin: 1%;
+    &:hover {
+      scale: 1.02;
+    }
   }
   @media screen and (min-width: 900px) {
     width: 31%;
@@ -206,27 +216,47 @@ const ContentRightDiv = styled.div`
 const UserImg = styled.img`
   border-radius: 100%;
   margin: 0.6rem 0;
-  width: 3rem;
+  width: 2.9rem;
   height: 3rem;
 `;
 const UserDiv = styled.div`
-  margin: 0.2rem;
+  margin-left: 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  top: 2px;
 `;
-const UserNickname = styled.div`
-  font-size: 25px;
-  font-weight: normal;
+const UserNickname = styled.div<{ Personal?: boolean }>`
+  display: ${(props) => (props.Personal ? 'none' : 'block')};
+  font-size: 20px;
+  font-weight: 400;
   width: 200px;
+  color: #5b5959;
   &:hover {
     cursor: pointer;
     color: violet;
+  }
+  @media screen and (min-width: 900px) and (max-width: 1058px) {
+    font-size: 15px;
+  }
+  @media screen and (max-width: 900px) {
+    font-size: 23px;
   }
 `;
 const Title = styled.div`
   font-size: 20px;
   font-weight: 500;
 `;
-const DateDiv = styled.div`
+const DateDiv = styled.div<{ Personal?: boolean }>`
+  display: ${(props) => (props.Personal ? 'none' : 'block')};
   width: 90px;
+  color: gray;
+  font-size: 70%;
+
+  @media screen and (min-width: 900px) and (max-width: 1058px) {
+    font-size: 12px;
+  }
 `;
 const ContentLeftDiv = styled.div`
   display: grid;
@@ -238,17 +268,62 @@ const ContentLeftDiv = styled.div`
 `;
 const HeartDiv = styled.div`
   display: flex;
-  column-gap: 2px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 `;
-const Button = styled.button`
-  background-color: white;
+const HeartButton = styled.div`
   display: flex;
   justify-content: center;
+  text-align: center;
+  align-items: center;
   &:hover {
     cursor: pointer;
   }
 `;
+const CommentDiv = styled.div`
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  align-items: center;
+`;
 const Num = styled.div`
-  font-size: 25px;
-  margin-left: 2px;
+  font-size: 23px;
+  width: 23px;
+  margin: 0 5px;
+  position: relative;
+  top: 3px;
+  color: #464545;
+`;
+
+const OutLineHeart = styled(FaRegHeart)`
+  color: pink;
+  font-weight: 600;
+  height: 30px;
+  width: 30px;
+  animation-name: beat;
+  animation-duration: 1s;
+  animation-iteration-count: 1;
+  @keyframes beat {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(0.6);
+    }
+  }
+`;
+
+const FilledHeart = styled(FaHeart)`
+  color: pink;
+  height: 30px;
+  width: 30px;
+  animation-name: beat;
+  animation-duration: 1s;
+  animation-iteration-count: 1;
+`;
+const CommentIcon = styled(FaRegCommentDots)`
+  height: 30px;
+  width: 30px;
+  color: gray;
 `;

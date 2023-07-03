@@ -38,6 +38,7 @@ export type MainFeedListProps = {
   commentNum?: number;
   title?: string;
   isRender: boolean;
+  personalFeed?: boolean;
 };
 
 export type modalProps = {

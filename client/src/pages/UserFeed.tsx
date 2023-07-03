@@ -22,6 +22,8 @@ import {
   UserInfoData,
 } from '../types/feedType';
 import { renderAction } from '../redux/actions';
+import { Spinner } from '../common/spinner/Spinner';
+
 export default function UserFeed() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -32,6 +34,8 @@ export default function UserFeed() {
     userImage: '',
     statusMessage: '',
   });
+  const [targetLoading, setTargetLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const target = useRef<HTMLDivElement>(null);
   let start = 0;
   let end = 8;
@@ -82,6 +86,9 @@ export default function UserFeed() {
   const userfeedinfo = async () => {
     return feedApi.userInfo(path).then(({ data }: UserInfoData) => {
       setUserlist(data.data);
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 2000);
     });
   };
 
@@ -118,22 +125,35 @@ export default function UserFeed() {
   }, [follow]);
 
   //내 피드가져오기
+  let myfeedFlag = 0;
   const myFeed = async () => {
+    if (userfeedlist.length < end && flag) return false;
     await feedApi.getMyFeed(accessToken, start, end).then((result) => {
+      myfeedFlag = 1;
       setUserFeedlist((prev) => prev.concat(result.data));
-      start += 8;
-      end += 8;
     });
+    start += 8;
+    end += 8;
   };
 
   //유저들의 피드
-  const userPage = async () => {
+  let flag = 0;
+  const userPage = async (path: string) => {
+    if (userfeedlist.length < end && flag) return false;
     await feedApi.getUserFeed(path, start, end).then((result) => {
+      flag = 1;
       setUserFeedlist((prev) => prev.concat(result.data));
-      start += 8;
-      end += 8;
     });
+    start += 8;
+    end += 8;
   };
+  useEffect(() => {
+    if (userInfo.nickname === path) {
+      myFeed().catch((err) => console.log(err));
+    } else {
+      userPage(path).catch((err) => console.log(err));
+    }
+  }, []);
 
   useEffect(() => {
     const options: IOptions = {
@@ -144,12 +164,22 @@ export default function UserFeed() {
     const io = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
+          setTargetLoading(entry.isIntersecting);
           setTimeout(() => {
             if (userInfo.nickname === path) {
-              myFeed().catch((err) => console.log(err));
+              myFeed()
+                .then((res) => {
+                  if (!res) return () => io.unobserve(target.current);
+                })
+                .catch((err) => console.log(err));
             } else {
-              userPage().catch((err) => console.log(err));
+              userPage(path)
+                .then((res) => {
+                  if (!res) return () => io.unobserve(target.current);
+                })
+                .catch((err) => console.log(err));
             }
+            setTargetLoading(false);
           }, 1000);
         }
       });
@@ -191,7 +221,9 @@ export default function UserFeed() {
           </div>
           <UserInfo>
             <UserDescribe>
-              <Content>{userlist.nickname}</Content>
+              <Content>
+                {userlist.nickname ? <>{userlist.nickname}</> : null}
+              </Content>
             </UserDescribe>
             <UserDescribe>
               <Content>{userlist.statusMessage}</Content>
@@ -222,12 +254,19 @@ export default function UserFeed() {
           </PlusButton>
         )}
         <Feed>
-          {userfeedlist.length === 0
-            ? `${userlist.nickname}님의 피드가 없습니다`
-            : userfeedlist.map((el) => (
-                <MainFeedList {...el} key={el.id} isRender />
-              ))}
-          <div ref={target} className="Target-Element"></div>
+          {isLoading || userfeedlist.length < 0 ? (
+            <LoadingConatiner>
+              <LoadingSpinner />
+              <Loading>loading...</Loading>
+            </LoadingConatiner>
+          ) : null}
+          {!isLoading && userfeedlist.length > 0 ? (
+            userfeedlist.map((el) => (
+              <MainFeedList {...el} key={el.id} isRender personalFeed />
+            ))
+          ) : !isLoading && userfeedlist.length === 0 ? (
+            <Text>{userlist.nickname}님의 게시글이 없습니다</Text>
+          ) : null}
         </Feed>
         {isModalOn ? (
           <Modal
@@ -238,15 +277,23 @@ export default function UserFeed() {
           />
         ) : null}
       </Div>
+      {targetLoading ? (
+        <TargetContainer>
+          <TargetSpinner />
+        </TargetContainer>
+      ) : null}
+      <div ref={target} className="Target-Element"></div>
     </UserWapper>
   );
 }
+const TargetContainer = styled.div`
+  width: 100%auto;
+  height: 10%;
+`;
+const TargetSpinner = styled(Spinner)``;
 const UserWapper = styled.div`
   width: 100%;
-  height: 100%;
-  /* @media screen and (max-width: 947px) {
-    min-height: 300vh;
-  } */
+  min-height: 90vh;
 `;
 const Div = styled.div`
   padding: 10rem;
@@ -273,7 +320,9 @@ const UserDiv = styled.div`
     align-items: center;
   }
 `;
-
+const Text = styled.div`
+  font-weight: bold;
+`;
 const UserImg = styled.img`
   position: relative;
   border-radius: 100%;
@@ -358,6 +407,7 @@ const Feed = styled.div`
     flex-wrap: wrap;
     justify-content: flex-start;
     align-items: center;
+    min-height: 35vh;
   }
 `;
 const PlusButton = styled.div<{ Hidden?: any }>`
@@ -392,4 +442,39 @@ const Block = styled.div`
   @media screen and (max-width: 947px) {
     width: 57px;
   }
+`;
+const Loading = styled.div`
+  justify-content: center;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: bolder;
+  width: 100%;
+  margin-top: 5px;
+  background: linear-gradient(to right, #8272eb, #d06be0, #fd40c8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text 1s infinite linear alternate;
+  @keyframes text {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+`;
+
+const LoadingSpinner = styled(Spinner)`
+  width: 80px;
+  height: 80px;
+`;
+const LoadingConatiner = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 `;

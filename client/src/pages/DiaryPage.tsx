@@ -5,10 +5,11 @@ import {
   addBoardInfo,
   deleteBoardInfo,
   diaryOffAction,
+  diaryOnAction,
   editOffAction,
   editOnAction,
 } from '../redux/actions';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Photo from '../component/Diary/Photo';
 import Drawing from '../component/Diary/Drawing';
 import { debounce } from 'debounce';
@@ -33,6 +34,7 @@ import {
   defaultProfile,
   feedBG,
 } from '../img/Img';
+import { RootState } from '../redux';
 
 export interface FormValues {
   title: string;
@@ -47,6 +49,7 @@ export interface FormValues {
 const DiaryPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [calOpen, setCalOpen] = useState(false);
@@ -60,9 +63,10 @@ const DiaryPage = () => {
   const { boardInfo } = useSelector(
     (boardReducer: any) => boardReducer.boardInfo
   );
-  const { userInfo, accessToken } = useSelector(
-    (userReducer: any) => userReducer.userInfo
+  const { userInfo, accessToken, isLogin } = useSelector(
+    (userReducer: RootState) => userReducer.userInfo
   );
+
   const { isEditOn } = useSelector((editReducer: any) => editReducer.editInfo);
   const { isDiaryOn } = useSelector(
     (diaryReducer: any) => diaryReducer.diaryInfo
@@ -80,6 +84,9 @@ const DiaryPage = () => {
 
   const editModeHandler = () => {
     dispatch(editOnAction);
+  };
+  const isDiaryOnHandler = () => {
+    dispatch(diaryOnAction);
   };
 
   const pickPicture = () => {
@@ -140,30 +147,45 @@ const DiaryPage = () => {
     }
   };
 
+  useEffect(() => {
+    setBoardInput({ ...boardInput, date: transDate });
+  }, [transDate]);
+
   const handleSaveBoard = () => {
-    const { title, picture, content, date } = boardInput;
-    if (title === '' || picture === '' || content === '' || date === '') {
+    const { title, picture, content } = boardInput;
+    if (title === '' || picture === '' || content === '') {
       return alert('내용을 작성해주세요');
     } else {
-      dispatch(addBoardInfo(boardInput));
-      boardApi.createBoard(boardInput, accessToken).then((result) => {
-        dispatch(addBoardInfo(result.data));
-        dispatch(diaryOffAction);
-      });
+      if (isLogin) {
+        dispatch(addBoardInfo(boardInput));
+        boardApi.createBoard(boardInput, accessToken).then((result) => {
+          dispatch(addBoardInfo(result.data));
+          dispatch(diaryOffAction);
+        });
+        alert('저장되었습니다.');
+        navigate('/mainfeed');
+      } else {
+        alert('로그인 후 사용 가능한 서비스입니다.');
+        navigate('/login');
+      }
     }
   };
 
   const handleEditBoard = () => {
-    const { title, picture, content, date } = boardInput;
-    if (title === '' || picture === '' || content === '' || date === '') {
+    const { title, picture, content } = boardInput;
+    if (title === '' || picture === '' || content === '') {
       return alert('내용을 작성해주세요');
     } else {
-      boardApi
-        .editBoard(boardInfo.id, boardInput, accessToken)
-        .then((result) => {
-          dispatch(addBoardInfo(result.data));
-          dispatch(editOffAction);
-        });
+      if (!isLogin) {
+        alert('로그인을 먼저 해주세요');
+      } else {
+        boardApi
+          .editBoard(boardInfo.id, boardInput, accessToken)
+          .then((result) => {
+            dispatch(addBoardInfo(result.data));
+            dispatch(editOffAction);
+          });
+      }
     }
   };
 
@@ -174,19 +196,19 @@ const DiaryPage = () => {
 
   const handleConfirm = (e: any) => {
     const text = e.target.name;
-    const result: any = confirm(`게시글을 ${text} 하시겠습니끼?`);
+    const result: any = confirm(`게시글을 ${text} 하시겠습니까?`);
 
     if (text === '삭제') {
       if (result) {
+        deleteWriting();
         alert(`${text}되었습니다.`);
-        return deleteWriting();
+        return navigate('/mainfeed');
       }
       {
         alert('취소되었습니다.');
       }
     } else if (text === '저장') {
       if (result) {
-        alert(`${text}되었습니다.`);
         return handleSaveBoard();
       }
       {
@@ -204,6 +226,14 @@ const DiaryPage = () => {
   };
 
   useEffect(() => {
+    if (
+      !isEditOn &&
+      !isDiaryOn &&
+      location.state?.fromMainFeedList === undefined
+    ) {
+      isDiaryOnHandler();
+    }
+    if (userInfo.nickname === undefined) return;
     if (boardInfo.title !== undefined || '') {
       setPickWay(boardInfo.pictureMethod);
       setBoardInput({
@@ -216,7 +246,7 @@ const DiaryPage = () => {
         date: boardInfo.date,
       });
 
-      feedApi.userInfo(boardInfo.nickname).then((result) => {
+      feedApi.userInfo(boardInfo?.nickname).then((result) => {
         setUserImg(result.data.data.userImage);
       });
     }
@@ -264,7 +294,11 @@ const DiaryPage = () => {
                   <SubBookMarkContent onClick={editModeHandler}>
                     수정
                   </SubBookMarkContent>
-                  <SubBookMarkContent Picture onClick={(e) => handleConfirm(e)}>
+                  <SubBookMarkContent
+                    name="삭제"
+                    Picture
+                    onClick={(e) => handleConfirm(e)}
+                  >
                     삭제
                   </SubBookMarkContent>
                 </SubBookMark>
@@ -298,7 +332,7 @@ const DiaryPage = () => {
                   <div>{boardInput.date}</div>
                 </WordInfo>
                 <ImoInfo>
-                  {userInfo.nickname === boardInfo.nickname ? (
+                  {userInfo?.nickname === boardInfo.nickname ? (
                     boardInput.lock === 'UNLOCK' ? (
                       <div onClick={changeLock}>🔓</div>
                     ) : (
@@ -437,7 +471,7 @@ const Container = styled.section`
     padding-top: 4rem;
     padding-bottom: 4rem;
     justify-content: flex-start;
-    height: 160vh;
+    height: 210vh;
   }
 `;
 
@@ -728,6 +762,9 @@ const SelectedDay = styled.div`
   font-size: 20px;
   padding: 1rem;
   margin-top: 10px;
+  @media screen and (max-width: 400px) {
+    font-size: 17px;
+  }
 `;
 const Lock = styled.div`
   display: flex;

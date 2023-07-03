@@ -5,7 +5,6 @@ import { FormValues } from '../../pages/DiaryPage';
 import { v4 as uuidv4 } from 'uuid';
 const AWS = require('aws-sdk/dist/aws-sdk-react-native');
 
-
 export interface drawingProps {
   boardInput: FormValues;
   setBoardInput: (boardInput: FormValues) => FormValues | void;
@@ -210,7 +209,11 @@ export default function Drawing({
             >
               Fill
             </button>
-            <button onClick={SaveImgHandler} name="picture">
+            <button
+              onClick={SaveImgHandler}
+              name="picture"
+              style={{ border: 'solid pink 5px' }}
+            >
               Save
             </button>
           </div>

@@ -10,6 +10,8 @@ import { useNavigate } from 'react-router-dom';
 import { feedBG } from '../img/Img';
 import { RootState } from '../redux';
 import { Feedlist, IOptions } from '../types/feedType';
+import FeedCardSkeleton from '../common/skeleton/FeedCardSkeleton';
+import { Spinner } from '../common/spinner/Spinner';
 
 export default function MainFeed() {
   const dispatch = useDispatch();
@@ -18,10 +20,15 @@ export default function MainFeed() {
   const [searchInput, setSearchInput] = useState('');
   const [searchOn, setSearchOn] = useState(false);
   const [orderingH, setOrderingH] = useState(false);
+
+  const [targetLoading, setTargetLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
   const target = useRef<HTMLDivElement>(null);
+
   let start = 0;
   let end = 8;
-  const { userInfo } = useSelector(
+  const { userInfo, isLogin } = useSelector(
     (userReducer: RootState) => userReducer.userInfo
   );
   const { isRender } = useSelector(
@@ -46,11 +53,13 @@ export default function MainFeed() {
     dispatch(renderAction);
   };
   const sortFeedByRecent = () => {
+    setIsLoading(true);
     if (orderingH) {
       setOrderingH(false);
       setFeedlist([]);
       dispatch(renderAction);
     }
+    setTimeout(() => setIsLoading(false), 1000);
   };
 
   const sortFeedByHeart = () => {
@@ -72,6 +81,7 @@ export default function MainFeed() {
   };
 
   const getUserFeedH = async (searchNickname: string) => {
+    setTargetLoading(true);
     return await feedApi
       .getUserFeed(searchNickname, start, end)
       .then((result) => {
@@ -87,17 +97,25 @@ export default function MainFeed() {
   const getMainFeedH = async () => {
     await feedApi.getMainFeedH(start, end).then((result) => {
       setFeedlist((prev) => prev.concat(result.data));
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
       start += 8;
       end += 8;
     });
   };
-
   const getMainFeed = async () => {
-    return await feedApi.getMainFeed(start, end).then((result) => {
-      setFeedlist((prev) => prev.concat(result.data));
-      start += 8;
-      end += 8;
-    });
+    return await feedApi
+      .getMainFeed(start, end)
+      .then((result) => {
+        setFeedlist((prev) => prev.concat(result.data));
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 500);
+        start += 8;
+        end += 8;
+      })
+      .then((res) => console.log(res));
   };
   useEffect(() => {
     const options: IOptions = {
@@ -109,6 +127,7 @@ export default function MainFeed() {
     const io = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
+          setTargetLoading(entry.isIntersecting);
           setTimeout(() => {
             if (orderingH === false && searchOn === false) {
               getMainFeed().catch((err) => console.log(err));
@@ -119,6 +138,7 @@ export default function MainFeed() {
             } else {
               getUserFeedH(searchInput).catch((err) => console.log(err));
             }
+            setTargetLoading(false);
           }, 1000);
         }
       });
@@ -127,11 +147,24 @@ export default function MainFeed() {
     if (target.current) {
       io.observe(target.current);
     }
-    if (userInfo.nickname === 'nothing') {
-      alert('닉네임을 변경해주세요');
-      navigate('/mystart');
-    }
   }, [isRender, target]);
+
+  useEffect(() => {
+    if (orderingH === false && searchOn === false) {
+      getMainFeed().catch((err) => console.log(err));
+    } else if (orderingH === true && searchOn === false) {
+      getMainFeedH().catch((err) => console.log(err));
+    } else if (orderingH === false && searchOn === true) {
+      getUserFeed(searchInput).catch((err) => console.log(err));
+    } else {
+      getUserFeedH(searchInput).catch((err) => console.log(err));
+    }
+    setTimeout(() => setIsLoading(false), 1000);
+    if (userInfo?.nickname === 'nothing') {
+      alert('닉네임을 변경해주세요');
+      navigate('/mypage');
+    }
+  }, []);
 
   return (
     <Container>
@@ -146,7 +179,7 @@ export default function MainFeed() {
               <Button onClick={() => sortFeedByHeart()}>인기순</Button>
             </ButtonDiv>
             <UpperRightDiv>
-              <form>
+              <form onSubmit={selectFeed}>
                 <SearchBar>
                   <SearchInput
                     name="searchBar"
@@ -162,20 +195,30 @@ export default function MainFeed() {
               <PlusButton onClick={writeNewDiary}> + </PlusButton>
             </UpperRightDiv>
           </UpperDiv>
-          <Feed>
-            {feedlist.length === 0
-              ? '피드가 없습니다'
-              : feedlist.map((el) => (
-                  <MainFeedList {...el} key={el.id} isRender />
-                ))}
+          <Feed onClick={!isLogin ? () => console.log('클릭') : null}>
+            {!isLoading &&
+              feedlist.map((el) => (
+                <MainFeedList {...el} key={el.id} isRender />
+              ))}
+            {isLoading &&
+              new Array(8).fill(1).map((_, i) => <FeedCardSkeleton key={i} />)}
             <div ref={target} className="Target-Element"></div>
           </Feed>
         </Div>
       </Wrapper>
+      {targetLoading ? (
+        <TargetContainer>
+          <TargetSpinner />
+        </TargetContainer>
+      ) : null}
     </Container>
   );
 }
-
+const TargetContainer = styled.div`
+  width: 100%auto;
+  height: 10%;
+`;
+const TargetSpinner = styled(Spinner)``;
 const Container = styled.div`
   background-image: url(${feedBG});
   background-size: cover;

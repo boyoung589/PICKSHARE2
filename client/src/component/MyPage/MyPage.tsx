@@ -721,5 +721,8 @@ const InputProfile = styled.input`
 `;
 const NicknameCheckMessage = styled.div`
   margin-left: 90px;
-  padding-top: 10px;
+  font-size: 15px;
+  position: relative;
+  top: -6px;
+  color: tomato;
 `;
