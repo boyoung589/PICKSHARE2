@@ -105,17 +105,14 @@ export default function MainFeed() {
     });
   };
   const getMainFeed = async () => {
-    return await feedApi
-      .getMainFeed(start, end)
-      .then((result) => {
-        setFeedlist((prev) => prev.concat(result.data));
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 500);
-        start += 8;
-        end += 8;
-      })
-      .then((res) => console.log(res));
+    return await feedApi.getMainFeed(start, end).then((result) => {
+      setFeedlist((prev) => prev.concat(result.data));
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+      start += 8;
+      end += 8;
+    });
   };
   useEffect(() => {
     const options: IOptions = {
