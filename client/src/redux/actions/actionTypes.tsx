@@ -18,3 +18,9 @@ export const EDIT_MODE_ON = 'EDIT_MODE_ON';
 export const EDIT_MODE_OFF = 'EDIT_MODE_OFF';
 
 export const RENDER = 'RENDER';
+
+export const HEART_ON = 'HEART_ON';
+export const HEART_OFF = 'HEART_OFF';
+export const SEARCH_ON = 'SEARTCH_ON';
+export const SEARCH_OFF = 'SEARCH_OFF';
+export const RESET_ORDER = 'RESET_ORDER';

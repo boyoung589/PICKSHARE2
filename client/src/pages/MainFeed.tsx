@@ -5,7 +5,14 @@ import MainFeedList from '../component/Feed/MainFeed/MainFeedList';
 import { BiSearch } from 'react-icons/bi';
 import { debounce } from 'debounce';
 import { useSelector, useDispatch } from 'react-redux';
-import { deleteBoardInfo, diaryOnAction, renderAction } from '../redux/actions';
+import {
+  deleteBoardInfo,
+  diaryOnAction,
+  heartOffAction,
+  heartOnAction,
+  renderAction,
+  searchOnAction,
+} from '../redux/actions';
 import { useNavigate } from 'react-router-dom';
 import { feedBG } from '../img/Img';
 import { RootState } from '../redux';
@@ -13,13 +20,20 @@ import { Feedlist, IOptions } from '../types/feedType';
 import FeedCardSkeleton from '../common/skeleton/FeedCardSkeleton';
 import { Spinner } from '../common/spinner/Spinner';
 
+export type MainFeedProps = {
+  search: boolean;
+  setSearch: (search: boolean) => void;
+  heart: boolean;
+  setHeart: (heart: boolean) => void;
+};
 export default function MainFeed() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [feedlist, setFeedlist] = useState<Feedlist[] | null>([]);
-  const [searchInput, setSearchInput] = useState('');
-  const [searchOn, setSearchOn] = useState(false);
-  const [orderingH, setOrderingH] = useState(false);
+
+  const [searchInput, setSearchInput] = useState(''); // searchInput
+  // const [search, setSearch] = useState(false);
+  // const [heart, setheart] = useState(false);
 
   const [targetLoading, setTargetLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,9 +48,77 @@ export default function MainFeed() {
   const { isRender } = useSelector(
     (renderReducer: RootState) => renderReducer.renderInfo
   );
+  const { searchState, heartState } = useSelector(
+    (orderReducer: RootState) => orderReducer.orderInfo
+  );
+
+  useEffect(() => {
+    setFeedlist([]);
+    console.log(heartState, searchState, '새로고침 최초 렌덜잉');
+    console.log('첫유즈이펙', 'search', searchState, 'heart', heartState);
+    if (heartState === false && searchState === false) {
+      console.log('전체 최신순');
+      getMainFeed().catch((err) => console.log(err));
+    } else if (heartState === true && searchState === false) {
+      console.log('전체 인기순');
+      getMainFeedH().catch((err) => console.log(err));
+    } else if (heartState === false && searchState === true) {
+      console.log('검색대상 최신순');
+      getUserFeed(searchInput).catch((err) => console.log(err));
+    } else {
+      console.log('검색대상 인기순');
+      getUserFeedH(searchInput).catch((err) => console.log(err));
+    }
+    setTimeout(() => setIsLoading(false), 2000);
+    if (userInfo?.nickname === 'nothing') {
+      alert('닉네임을 변경해주세요');
+      navigate('/mypage');
+    }
+  }, [isRender]);
+  /*  console.log(heart, search, 'hohohoho'); */
+
+  useEffect(() => {
+    console.log(heartState, searchState, '타겟의 setTimouout0');
+    const options: IOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.5,
+    };
+    console.log(heartState, searchState, '타겟');
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setTargetLoading(entry.isIntersecting);
+          console.log(heartState, searchState, '타겟의 setTimouout1');
+          setTimeout(() => {
+            console.log(heartState, searchState, '타겟의 setTimouout2');
+            if (heartState === false && searchState === false) {
+              console.log('최신순');
+              getMainFeed().catch((err) => console.log(err));
+            } else if (heartState === true && searchState === false) {
+              console.log('인기순');
+              getMainFeedH().catch((err) => console.log(err));
+            } else if (heartState === false && searchState === true) {
+              getUserFeed(searchInput)
+                .then((res) => disconnectFetch(res, io))
+                .catch((err) => console.log(err));
+            } else {
+              getUserFeedH(searchInput).catch((err) => console.log(err));
+            }
+            setTargetLoading(false);
+          }, 2000);
+        }
+      });
+    }, options);
+
+    if (target.current) {
+      io.observe(target.current);
+    }
+  }, [target]);
+
   const handleSearchInput = debounce(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchOn(true);
+      // setSearchOn(true);
       setSearchInput(e.target.value);
     },
     300
@@ -50,37 +132,43 @@ export default function MainFeed() {
   };
 
   const selectFeed = () => {
+    dispatch(searchOnAction);
+    // setSearch(true);
+    console.log('유저검색클릭', heartState, searchState);
     dispatch(renderAction);
   };
+
   const sortFeedByRecent = () => {
-    setIsLoading(true);
-    if (orderingH) {
-      setOrderingH(false);
-      setFeedlist([]);
-      dispatch(renderAction);
-    }
-    setTimeout(() => setIsLoading(false), 1000);
+    // setHeart(false);
+    dispatch(heartOffAction);
+    console.log('최신순클릭', heartState, searchState);
+    dispatch(renderAction);
   };
 
   const sortFeedByHeart = () => {
-    if (!orderingH) {
-      setOrderingH(true);
-      setFeedlist([]);
-      dispatch(renderAction);
-    }
+    // setHeart(true);
+    dispatch(heartOnAction);
+    console.log('인기순클릭', heartState, searchState);
+    dispatch(renderAction);
   };
 
+  let flag = 0;
   const getUserFeed = async (searchNickname: string) => {
-    return await feedApi
-      .getUserFeed(searchNickname, start, end)
-      .then((result) => {
-        setFeedlist((prev) => prev.concat(result.data));
-        start += 8;
-        end += 8;
-      });
+    console.log('getUserFeed');
+    console.log('search', searchState, 'heart', heartState);
+    if (flag && feedlist.length < 8) return false;
+    await feedApi.getUserFeed(searchNickname, start, end).then((result) => {
+      flag = 1;
+      setFeedlist((prev) => prev.concat(result.data));
+    });
+    start += 8;
+    end += 8;
+    return true;
   };
+  console.log(feedlist, 'feedlist');
 
   const getUserFeedH = async (searchNickname: string) => {
+    console.log('getUserFeedH');
     setTargetLoading(true);
     return await feedApi
       .getUserFeed(searchNickname, start, end)
@@ -95,73 +183,28 @@ export default function MainFeed() {
   };
 
   const getMainFeedH = async () => {
+    console.log('getMainFeedH');
+    console.log(start, end);
     await feedApi.getMainFeedH(start, end).then((result) => {
       setFeedlist((prev) => prev.concat(result.data));
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
       start += 8;
       end += 8;
     });
   };
   const getMainFeed = async () => {
+    console.log('getMainFeed');
     return await feedApi.getMainFeed(start, end).then((result) => {
       setFeedlist((prev) => prev.concat(result.data));
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
       start += 8;
       end += 8;
     });
   };
-  useEffect(() => {
-    const options: IOptions = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.5,
-    };
 
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setTargetLoading(entry.isIntersecting);
-          setTimeout(() => {
-            if (orderingH === false && searchOn === false) {
-              getMainFeed().catch((err) => console.log(err));
-            } else if (orderingH === true && searchOn === false) {
-              getMainFeedH().catch((err) => console.log(err));
-            } else if (orderingH === false && searchOn === true) {
-              getUserFeed(searchInput).catch((err) => console.log(err));
-            } else {
-              getUserFeedH(searchInput).catch((err) => console.log(err));
-            }
-            setTargetLoading(false);
-          }, 1000);
-        }
-      });
-    }, options);
-
-    if (target.current) {
-      io.observe(target.current);
-    }
-  }, [isRender, target]);
-
-  useEffect(() => {
-    if (orderingH === false && searchOn === false) {
-      getMainFeed().catch((err) => console.log(err));
-    } else if (orderingH === true && searchOn === false) {
-      getMainFeedH().catch((err) => console.log(err));
-    } else if (orderingH === false && searchOn === true) {
-      getUserFeed(searchInput).catch((err) => console.log(err));
-    } else {
-      getUserFeedH(searchInput).catch((err) => console.log(err));
-    }
-    setTimeout(() => setIsLoading(false), 1000);
-    if (userInfo?.nickname === 'nothing') {
-      alert('닉네임을 변경해주세요');
-      navigate('/mypage');
-    }
-  }, []);
+  const disconnectFetch = (result: boolean, callback: IntersectionObserver) => {
+    console.log('✅');
+    console.log(result, '디스커넥트 리졸트');
+    if (!result) return () => callback.disconnect();
+  };
 
   return (
     <Container>
@@ -176,13 +219,13 @@ export default function MainFeed() {
               <Button onClick={() => sortFeedByHeart()}>인기순</Button>
             </ButtonDiv>
             <UpperRightDiv>
-              <form onSubmit={selectFeed}>
+              <form>
                 <SearchBar>
                   <SearchInput
                     name="searchBar"
                     type={'text'}
                     placeholder="유저 검색"
-                    onChange={handleSearchInput}
+                    onChange={(e) => handleSearchInput(e)}
                   />
                   <SearchIcon type="button" onClick={selectFeed}>
                     <BiSearch size={'1.7rem'} />
@@ -192,7 +235,7 @@ export default function MainFeed() {
               <PlusButton onClick={writeNewDiary}> + </PlusButton>
             </UpperRightDiv>
           </UpperDiv>
-          <Feed onClick={!isLogin ? () => console.log('클릭') : null}>
+          <Feed>
             {!isLoading &&
               feedlist.map((el) => (
                 <MainFeedList {...el} key={el.id} isRender />

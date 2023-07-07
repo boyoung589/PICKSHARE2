@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import CommentSection from './component/Comment/Comments';
 import GlobalStyles from './styles/GlobalStyles';
 import theme from './styles/theme';
