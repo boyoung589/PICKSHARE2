@@ -21,7 +21,9 @@ export class MypageService {
 
   // 회원정보 수정
   async updateUserInfo(updateUser: UpdateUserDto, user: any): Promise<object> {
-    const userInfo = await this.userRepository.findOne({ where: {email: user.email} });
+    const userInfo = await this.userRepository.findOne({
+      where: { email: user.email },
+    });
     if (userInfo) {
       const updateUserInfo: object = { ...userInfo, ...updateUser };
       await this.userRepository.save(updateUserInfo);
@@ -42,12 +44,9 @@ export class MypageService {
   ): Promise<object> {
     const { id, email } = user;
     const delHeart: any = await this.heartRepository.delete({ user_id: id });
-    console.log(delHeart, 'deleteHeart');
     const delFollow: any = await this.followRepository.delete({ user_id: id });
-    console.log(delFollow, 'deletefollow');
     const delBoard: any = await this.boardRepository.delete({ user_id: id });
-    console.log(delBoard, 'deleteBoard');
-    const userInfo = await this.userRepository.findOne({ where: {email} });
+    const userInfo = await this.userRepository.findOne({ where: { email } });
 
     const passwordComparison = await bcrypt.compare(
       passwordDto.password,
@@ -62,21 +61,17 @@ export class MypageService {
   }
   // 카카오 회원탈퇴
   async removeKakaoUserInfo(user: User): Promise<object> {
-    console.log(user, 'user');
     const { id, email } = user;
     // 삭제해야하는것: follow, heart, comment, board
     const delHeart: any = await this.heartRepository.delete({ user_id: id });
-    console.log(delHeart, 'deleteHeart');
     const delFollow: any = await this.followRepository.delete({ user_id: id });
-    console.log(delFollow, 'deletefollow');
     /*   const delComment: any = await this.commentRepository.delete({
       user_id: id,
     });
     console.log(delComment, 'deletecomment'); */
     const delBoard: any = await this.boardRepository.delete({ user_id: id });
-    console.log(delBoard, 'deleteBoard');
     const userInfo: any = await this.userRepository.findOne({
-      where: { email }
+      where: { email },
     });
 
     if (userInfo) {

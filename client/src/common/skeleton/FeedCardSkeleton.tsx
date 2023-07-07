@@ -38,6 +38,7 @@ const Div = styled.div`
   border-radius: 1rem;
   margin-bottom: 10px;
   background: #f3f0f0;
+  transition: all 3s linear 6s;
 
   @media screen and (min-width: 840px) {
     width: 48%;

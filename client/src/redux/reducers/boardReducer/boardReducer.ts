@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { ADD_BOARD_INFO, DELETE_BOARD_INFO } from '../../actions/actionTypes';
 
 type PictureMethod = 0 | 1;

@@ -155,7 +155,6 @@ function MyPage() {
               await mypageApi
                 .userRemove(passwordCheck, accessToken)
                 .then((res) => {
-                  console.log(res, 'res');
                   if (res.data.statusCode === 200) {
                     void dispatch(deleteUserInfo());
                     setLoading(!loading);
@@ -165,7 +164,6 @@ function MyPage() {
                       return;
                     }, 2000);
                   } else {
-                    console.log('탈퇴실패');
                     alert('탈퇴에 실패했습니다. 비밀번호를 확인해주세요');
                   }
                 });

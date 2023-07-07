@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { LoginDto } from './dto/login-user.dto';
 import { SignUpDto } from './dto/singup-user.dto';
 import { UserRepository } from './user.repository';
@@ -17,7 +21,9 @@ export class UserService {
   ) {}
 
   async getEmailCheck(id: string): Promise<boolean> {
-    const emailcheck = await this.userRepository.findOne({ where:{email: id} });
+    const emailcheck = await this.userRepository.findOne({
+      where: { email: id },
+    });
     if (emailcheck) {
       return true;
     } else {
@@ -26,7 +32,9 @@ export class UserService {
   }
 
   async getNicknameCheck(id: string): Promise<boolean> {
-    const nicknamecheck = await this.userRepository.findOne({ where:{nickname: id} });
+    const nicknamecheck = await this.userRepository.findOne({
+      where: { nickname: id },
+    });
     if (nicknamecheck) {
       return true;
     } else {
@@ -37,7 +45,7 @@ export class UserService {
     signUpDto: SignUpDto,
   ): Promise<{ message: string; statusCode: number }> {
     const findUser = await this.userRepository.findOne({
-      where:{email: signUpDto.email,}
+      where: { email: signUpDto.email },
     });
     if (findUser) {
       return { message: '이미 가입된 이메일입니다.', statusCode: 200 };
@@ -49,11 +57,9 @@ export class UserService {
   async login(
     loginDto: LoginDto,
   ): Promise<{ message: string; data: object; statusCode: number }> {
-    //console.log(loginDto, 'loginDto');
     const { email, password } = loginDto;
 
-    const user = await this.userRepository.findOne({ where:{email} });
-    //console.log(user, '찾은 유저입니다.');
+    const user = await this.userRepository.findOne({ where: { email } });
     if (user && (await bcrypt.compare(password, user.password))) {
       const {
         id,
@@ -122,7 +128,7 @@ export class UserService {
       const { email } = userInfoKakao.data.kakao_account;
 
       const userInfo = await this.userRepository.findOne({
-        where:{email},
+        where: { email },
       });
       if (!userInfo) {
         const user = await this.userRepository.kakaoCreateUser(email);
@@ -160,17 +166,16 @@ export class UserService {
         return { message: '일반 계정을 가지고 있습니다.', statusCode: 400 };
       }
     } catch (error) {
-      console.log(error, '찾을 수 없는 인가코드입니다.');
       return { message: '찾을 수 없는 인가코드입니다.', data: error };
     }
   }
   async getUserInfo(userNickname: string): Promise<{ data: object }> {
-    const info = await this.userRepository.findOne({where:
-      {nickname: userNickname,}
+    const info = await this.userRepository.findOne({
+      where: { nickname: userNickname },
     });
 
-    if(!info){
-      throw new NotFoundException(`Can't find user nickname ${userNickname}`); 
+    if (!info) {
+      throw new NotFoundException(`Can't find user nickname ${userNickname}`);
     }
     return {
       data: {

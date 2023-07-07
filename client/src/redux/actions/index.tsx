@@ -13,11 +13,6 @@ import {
   EDIT_MODE_ON,
   EDIT_MODE_OFF,
   RENDER,
-  HEART_ON,
-  HEART_OFF,
-  SEARCH_ON,
-  SEARCH_OFF,
-  RESET_ORDER,
 } from './actionTypes';
 
 export const addUserInfo = (userInfo: IUser | IKakaoUser, token: string) => {
@@ -79,24 +74,4 @@ export const editOffAction = {
 
 export const renderAction = {
   type: RENDER,
-};
-
-export const heartOnAction = {
-  type: HEART_ON,
-};
-
-export const heartOffAction = {
-  type: HEART_OFF,
-};
-
-export const searchOnAction = {
-  type: SEARCH_ON,
-};
-
-export const searchOffAction = {
-  type: SEARCH_OFF,
-};
-
-export const resetOrderAction = {
-  type: RESET_ORDER,
 };

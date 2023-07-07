@@ -37,15 +37,16 @@ export class TokenService extends PassportStrategy(Strategy) {
 
         if (findKakaoEmail) {
           const user: User = await this.userRepository.findOne({
-            where: {email: findKakaoEmail.data.kakao_account.email}
+            where: { email: findKakaoEmail.data.kakao_account.email },
           });
-          console.log(user, '카카오 유저');
           return user;
         } else {
           throw new UnauthorizedException('토큰 만료');
         }
       } else {
-        const user: User = await this.userRepository.findOne({ where:{email} });
+        const user: User = await this.userRepository.findOne({
+          where: { email },
+        });
         if (!user) {
           throw new UnauthorizedException('유저 없음');
         }
@@ -55,7 +56,6 @@ export class TokenService extends PassportStrategy(Strategy) {
       if (error.response.status === 401) {
         return { message: '토큰 만료', data: error.response.status };
       }
-      console.log(error.response.status);
     }
   }
 

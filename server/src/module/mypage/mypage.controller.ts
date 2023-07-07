@@ -32,8 +32,6 @@ export class MypageController {
     @Body() passwordDto: PasswordCheckDto,
   ): Promise<object> {
     const { user } = req;
-    console.log(user, 'user');
-    console.log(passwordDto);
     return this.mypage.removeUserInfo(user, passwordDto);
   }
 

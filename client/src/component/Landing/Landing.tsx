@@ -1,17 +1,58 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
 import styled from 'styled-components';
 import { TbPhoto } from 'react-icons/tb';
 import { FaPaintBrush } from 'react-icons/fa';
 import { IoIosPeople } from 'react-icons/io';
 import theme from '../../styles/theme';
+import loginApi from '../../api/login';
+import { ITokenData, IUserData } from '../../types/userType';
+import { useDispatch } from 'react-redux';
+import { addUserInfo } from '../../redux/actions';
 
-const Landing = () => {
+function Landing() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   useEffect(() => {
     document.documentElement.scrollTop = 0;
   }, []);
+
+  const Login = async () => {
+    const userInfo = {
+      email: 'client@gmail.com',
+      password: '1234',
+    };
+    if (userInfo) {
+      try {
+        await loginApi.login(userInfo).then(({ data }: ITokenData) => {
+          const { accessToken } = data.data;
+          if (accessToken) {
+            void tokenVerification(accessToken);
+          } else {
+            console.log('토큰이 없습니다.');
+          }
+        });
+      } catch (error) {
+        alert('게스트 계정으로 입장이 불가합니다.');
+      }
+    }
+  };
+
+  const tokenVerification = async (token: string) => {
+    try {
+      await loginApi.token(token).then(({ data }: IUserData) => {
+        const { userInfo } = data.data;
+        if (userInfo) {
+          dispatch(addUserInfo(userInfo, token));
+          return;
+        } else {
+          console.log('로그인 실패');
+        }
+      });
+    } catch (error) {
+      console.log('error');
+    }
+  };
 
   return (
     <>
@@ -23,11 +64,12 @@ const Landing = () => {
             <Line2>PICKSHARE</Line2>
             <Line3>
               <Button
-                onClick={() => {
+                onClick={async () => {
+                  await Login();
                   navigate('/mainfeed');
                 }}
               >
-                둘러볼래요
+                손님 계정
               </Button>
               <Button
                 onClick={() => {
@@ -80,7 +122,7 @@ const Landing = () => {
       </Wrapper>
     </>
   );
-};
+}
 
 export default Landing;
 
@@ -298,3 +340,13 @@ const Div = styled.div`
     flex: 0 auto;
   }
 `;
+function dispatch(arg0: {
+  type: string;
+  isLogin: boolean;
+  payload:
+    | import('../../types/userType').IUser
+    | import('../../types/userType').IKakaoUser;
+  accessToken: string;
+}) {
+  throw new Error('Function not implemented.');
+}

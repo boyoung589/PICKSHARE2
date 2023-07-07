@@ -1,225 +1,248 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import feedApi from '../api/feed';
-import MainFeedList from '../component/Feed/MainFeed/MainFeedList';
 import { BiSearch } from 'react-icons/bi';
-import { debounce } from 'debounce';
 import { useSelector, useDispatch } from 'react-redux';
-import {
-  deleteBoardInfo,
-  diaryOnAction,
-  heartOffAction,
-  heartOnAction,
-  renderAction,
-  searchOnAction,
-} from '../redux/actions';
+import { deleteBoardInfo, diaryOnAction } from '../redux/actions';
 import { useNavigate } from 'react-router-dom';
 import { feedBG } from '../img/Img';
 import { RootState } from '../redux';
-import { Feedlist, IOptions } from '../types/feedType';
+import { Feedlist } from '../types/feedType';
 import FeedCardSkeleton from '../common/skeleton/FeedCardSkeleton';
 import { Spinner } from '../common/spinner/Spinner';
+import Category from '../component/Category/Category';
+import { AxiosPromise } from 'axios';
+import { debounce } from 'debounce';
+import ScrollTopButton from '../component/ScrollTopButton/ScrollTopButton';
 
-export type MainFeedProps = {
-  search: boolean;
-  setSearch: (search: boolean) => void;
-  heart: boolean;
-  setHeart: (heart: boolean) => void;
-};
 export default function MainFeed() {
+  let start = 0;
+  let end = 8;
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [feedlist, setFeedlist] = useState<Feedlist[] | null>([]);
 
-  const [searchInput, setSearchInput] = useState(''); // searchInput
-  // const [search, setSearch] = useState(false);
-  // const [heart, setheart] = useState(false);
+  const [storage, setStorage] = useState<Feedlist[] | null>([]);
+  console.log(storage, 'storage');
+  const [feedlist, setFeedlist] = useState<Feedlist[] | null>([]);
+  const [preferencelist, setPreferencelist] = useState<Feedlist[] | null>([]);
+  const [searchFeedlist, setSearchFeedlist] = useState<Feedlist[] | null>([]);
+
+  const [searchOn, setSearchOn] = useState(false);
+  const [orderingH, setOrderingH] = useState(false);
+
+  const [searchInput, setSearchInput] = useState('');
 
   const [targetLoading, setTargetLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const target = useRef<HTMLDivElement>(null);
 
-  let start = 0;
-  let end = 8;
-  const { userInfo, isLogin } = useSelector(
+  const { userInfo } = useSelector(
     (userReducer: RootState) => userReducer.userInfo
   );
-  const { isRender } = useSelector(
-    (renderReducer: RootState) => renderReducer.renderInfo
-  );
-  const { searchState, heartState } = useSelector(
-    (orderReducer: RootState) => orderReducer.orderInfo
-  );
 
+  const { getUserFeed, getMainFeed, getMainFeedH } = feedApi;
   useEffect(() => {
-    setFeedlist([]);
-    console.log(heartState, searchState, '새로고침 최초 렌덜잉');
-    console.log('첫유즈이펙', 'search', searchState, 'heart', heartState);
-    if (heartState === false && searchState === false) {
-      console.log('전체 최신순');
-      getMainFeed().catch((err) => console.log(err));
-    } else if (heartState === true && searchState === false) {
-      console.log('전체 인기순');
-      getMainFeedH().catch((err) => console.log(err));
-    } else if (heartState === false && searchState === true) {
-      console.log('검색대상 최신순');
-      getUserFeed(searchInput).catch((err) => console.log(err));
+    setIsLoading(true);
+    if (searchOn && !orderingH) {
+      console.log('최신순+서치On');
+      initialFeedFetch(getUserFeed(searchInput, 0, 0), setSearchFeedlist).catch(
+        (err) => console.log(err)
+      );
+    } else if (searchOn && orderingH) {
+      console.log('인기순+서치On');
+      initialFeedFetch(
+        getUserFeed(searchInput, start, end),
+        setSearchFeedlist,
+        true
+      ).catch((err) => console.log(err));
+    } else if (!orderingH) {
+      console.log('최신순+서치Off');
+      initialFeedFetch(getMainFeed(start, end), setFeedlist).catch((err) =>
+        console.log(err)
+      );
     } else {
-      console.log('검색대상 인기순');
-      getUserFeedH(searchInput).catch((err) => console.log(err));
+      console.log('인기순+서치Off');
+      initialFeedFetch(getMainFeedH(start, end), setPreferencelist).catch(
+        (err) => console.log(err)
+      );
     }
-    setTimeout(() => setIsLoading(false), 2000);
-    if (userInfo?.nickname === 'nothing') {
-      alert('닉네임을 변경해주세요');
-      navigate('/mypage');
-    }
-  }, [isRender]);
-  /*  console.log(heart, search, 'hohohoho'); */
-
-  useEffect(() => {
-    console.log(heartState, searchState, '타겟의 setTimouout0');
-    const options: IOptions = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.5,
-    };
-    console.log(heartState, searchState, '타겟');
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setTargetLoading(entry.isIntersecting);
-          console.log(heartState, searchState, '타겟의 setTimouout1');
-          setTimeout(() => {
-            console.log(heartState, searchState, '타겟의 setTimouout2');
-            if (heartState === false && searchState === false) {
-              console.log('최신순');
-              getMainFeed().catch((err) => console.log(err));
-            } else if (heartState === true && searchState === false) {
-              console.log('인기순');
-              getMainFeedH().catch((err) => console.log(err));
-            } else if (heartState === false && searchState === true) {
-              getUserFeed(searchInput)
-                .then((res) => disconnectFetch(res, io))
-                .catch((err) => console.log(err));
-            } else {
-              getUserFeedH(searchInput).catch((err) => console.log(err));
-            }
-            setTargetLoading(false);
-          }, 2000);
-        }
-      });
-    }, options);
-
-    if (target.current) {
-      io.observe(target.current);
-    }
-  }, [target]);
+    setTimeout(() => setIsLoading(false), 1000);
+  }, [searchOn, orderingH, searchInput]);
 
   const handleSearchInput = debounce(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      // setSearchOn(true);
-      setSearchInput(e.target.value);
+      setIsLoading(true);
+      if (searchOn && e.target.value === '') {
+        setSearchOn(false);
+      } else {
+        setSearchInput(e.target.value);
+        setSearchOn(true);
+      }
+      clearData();
+      setTimeout(() => {
+        console.log('검색중..');
+      }, 400);
     },
-    300
+    500
   );
 
+  const clearData = () => {
+    if (storage) setStorage([]);
+    if (feedlist) setFeedlist([]);
+    if (preferencelist) setPreferencelist([]);
+    if (searchFeedlist) setSearchFeedlist([]);
+    return;
+  };
+
   const writeNewDiary = () => {
-    //새로 만들기
     dispatch(deleteBoardInfo());
     dispatch(diaryOnAction);
     navigate('/diary');
   };
 
-  const selectFeed = () => {
-    dispatch(searchOnAction);
-    // setSearch(true);
-    console.log('유저검색클릭', heartState, searchState);
-    dispatch(renderAction);
-  };
-
   const sortFeedByRecent = () => {
-    // setHeart(false);
-    dispatch(heartOffAction);
-    console.log('최신순클릭', heartState, searchState);
-    dispatch(renderAction);
+    if (orderingH) {
+      setOrderingH(false);
+      clearData();
+    }
   };
 
   const sortFeedByHeart = () => {
-    // setHeart(true);
-    dispatch(heartOnAction);
-    console.log('인기순클릭', heartState, searchState);
-    dispatch(renderAction);
+    if (!orderingH) {
+      setOrderingH(true);
+      clearData();
+    }
   };
 
+  // 무한 스크롤 시, 데이터 페칭함수
   let flag = 0;
-  const getUserFeed = async (searchNickname: string) => {
-    console.log('getUserFeed');
-    console.log('search', searchState, 'heart', heartState);
-    if (flag && feedlist.length < 8) return false;
-    await feedApi.getUserFeed(searchNickname, start, end).then((result) => {
+  const sliceMainFeed = (io: IntersectionObserver) => {
+    if (flag) {
+      return io.unobserve(target.current);
+    }
+    const storageEnd = storage.length - Math.floor(storage.length % 8);
+    if (end === storageEnd) {
+      const sliceData = storage.slice(end, storage.length);
+      setFeedlist((prev) => prev.concat(sliceData));
       flag = 1;
-      setFeedlist((prev) => prev.concat(result.data));
-    });
+      return;
+    }
     start += 8;
     end += 8;
+    const sliceData = storage.slice(start, end);
+    setFeedlist((prev) => prev.concat(sliceData));
     return true;
   };
-  console.log(feedlist, 'feedlist');
 
-  const getUserFeedH = async (searchNickname: string) => {
-    console.log('getUserFeedH');
-    setTargetLoading(true);
-    return await feedApi
-      .getUserFeed(searchNickname, start, end)
-      .then((result) => {
-        result.data.sort((a, b) => {
-          return b.heartNum - a.heartNum;
-        });
-        setFeedlist((prev) => prev.concat(result.data));
-        start += 8;
-        end += 8;
+  const sliceMainFeedH = (io: IntersectionObserver) => {
+    if (flag) return io.unobserve(target.current);
+    const storageEnd = storage.length - Math.floor(storage.length % 8);
+    if (end === storageEnd) {
+      const sliceData = storage.slice(end, storage.length);
+      setPreferencelist((prev) => prev.concat(sliceData));
+      flag = 1;
+      return;
+    }
+    start += 8;
+    end += 8;
+    const sliceData = storage.slice(start, end);
+    setPreferencelist((prev) => prev.concat(sliceData));
+    return true;
+  };
+
+  const sliceSearchFeed = (io: IntersectionObserver) => {
+    if (flag) return io.unobserve(target.current);
+    const storageEnd = storage.length - Math.floor(storage.length % 8);
+    if (end === storageEnd) {
+      const sliceData = storage.slice(end, storage.length);
+      setSearchFeedlist((prev) => prev.concat(sliceData));
+      flag = 1;
+      return;
+    }
+    start += 8;
+    end += 8;
+    const sliceData = storage.slice(start, end);
+    setSearchFeedlist((prev) => prev.concat(sliceData));
+    return true;
+  };
+
+  // 첫 페칭 함수
+  const initialFeedFetch = async (
+    fun: AxiosPromise<Feedlist[]>,
+    setState: React.Dispatch<React.SetStateAction<Feedlist[]>>,
+    sort?: boolean
+  ) => {
+    try {
+      await fun.then((result: { data: Feedlist[] }) => {
+        if (sort && result) {
+          result.data.sort((a, b) => {
+            return b.heartNum - a.heartNum;
+          });
+        }
+        const initial = result.data.slice(0, 8);
+        if (initial) {
+          setStorage([...result.data]);
+          setState((prev) => prev.concat(initial));
+        }
       });
+    } catch (err) {
+      console.log(err);
+    }
   };
 
-  const getMainFeedH = async () => {
-    console.log('getMainFeedH');
-    console.log(start, end);
-    await feedApi.getMainFeedH(start, end).then((result) => {
-      setFeedlist((prev) => prev.concat(result.data));
-      start += 8;
-      end += 8;
-    });
-  };
-  const getMainFeed = async () => {
-    console.log('getMainFeed');
-    return await feedApi.getMainFeed(start, end).then((result) => {
-      setFeedlist((prev) => prev.concat(result.data));
-      start += 8;
-      end += 8;
-    });
-  };
+  if (userInfo?.nickname === 'nothing') {
+    alert('닉네임을 변경해주세요');
+    navigate('/mypage');
+  }
 
-  const disconnectFetch = (result: boolean, callback: IntersectionObserver) => {
-    console.log('✅');
-    console.log(result, '디스커넥트 리졸트');
-    if (!result) return () => callback.disconnect();
-  };
+  console.log('feedlist', feedlist);
+  console.log('prefer', preferencelist);
+  console.log('search', searchFeedlist);
+  console.log(flag);
 
+  const rendering = (
+    fetchF: (io: IntersectionObserver) => boolean | void | (() => void),
+    list: Feedlist[] | null
+  ) => {
+    return (
+      <Category
+        dataFetch={fetchF}
+        list={list}
+        target={target}
+        setTargetLoading={setTargetLoading}
+      />
+    );
+  };
+  let categorypost;
+  if (!searchOn && !orderingH) {
+    categorypost = rendering(sliceMainFeed, feedlist);
+  } else if (!searchOn && orderingH) {
+    categorypost = rendering(sliceMainFeedH, preferencelist);
+  } else {
+    // searchOn일때
+    categorypost = rendering(sliceSearchFeed, searchFeedlist);
+  }
   return (
     <Container>
+      <ScrollTopButton />
       <Wrapper>
         <Div>
           <UpperDiv>
             <ButtonDiv>
-              <Button onClick={() => sortFeedByRecent()} className="left">
+              <Button
+                onClick={() => sortFeedByRecent()}
+                className="left"
+                Select={!orderingH}
+              >
                 최신순
               </Button>
-              <Line></Line>
-              <Button onClick={() => sortFeedByHeart()}>인기순</Button>
+              <Button onClick={() => sortFeedByHeart()} Select={orderingH}>
+                인기순
+              </Button>
             </ButtonDiv>
             <UpperRightDiv>
-              <form>
+              <form onSubmit={(e) => e.preventDefault()}>
                 <SearchBar>
                   <SearchInput
                     name="searchBar"
@@ -227,7 +250,7 @@ export default function MainFeed() {
                     placeholder="유저 검색"
                     onChange={(e) => handleSearchInput(e)}
                   />
-                  <SearchIcon type="button" onClick={selectFeed}>
+                  <SearchIcon type="button">
                     <BiSearch size={'1.7rem'} />
                   </SearchIcon>
                 </SearchBar>
@@ -236,13 +259,21 @@ export default function MainFeed() {
             </UpperRightDiv>
           </UpperDiv>
           <Feed>
-            {!isLoading &&
-              feedlist.map((el) => (
-                <MainFeedList {...el} key={el.id} isRender />
-              ))}
             {isLoading &&
               new Array(8).fill(1).map((_, i) => <FeedCardSkeleton key={i} />)}
-            <div ref={target} className="Target-Element"></div>
+            {!isLoading && categorypost}
+            {!isLoading && searchOn && searchFeedlist.length === 0 && (
+              <Message>유저 검색 결과가 없습니다.</Message>
+            )}
+            <div
+              style={{
+                width: '100%',
+                height: '100px',
+                border: 'solid red 2px',
+              }}
+              ref={target}
+              className="Target-Element"
+            ></div>
           </Feed>
         </Div>
       </Wrapper>
@@ -254,6 +285,7 @@ export default function MainFeed() {
     </Container>
   );
 }
+
 const TargetContainer = styled.div`
   width: 100%auto;
   height: 10%;
@@ -262,6 +294,7 @@ const TargetSpinner = styled(Spinner)``;
 const Container = styled.div`
   background-image: url(${feedBG});
   background-size: cover;
+  height: 120%;
 `;
 const Wrapper = styled.div`
   display: flex;
@@ -285,19 +318,19 @@ const ButtonDiv = styled.div`
   margin-left: 0.9em;
 `;
 
-const Button = styled.button`
+const Button = styled.button<{ Select?: boolean }>`
   font-family: sans-serif;
-  border-radius: 10px;
   flex-shrink: 0;
   margin-right: 0.5rem;
   font-size: 1rem;
-  padding: 5px 7px;
+  padding: 1px 7px;
   text-align: center;
   font-weight: 650;
-  opacity: 0.8;
-  background: linear-gradient(to right, #ee64c7, #8272eb, #d06be0);
+  border-bottom: solid 2px ${(props) => (props.Select ? '#ec86e0' : 'null')};
+  background: linear-gradient(to right, #8272eb, #d06be0, #fd40c8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  transition: all 0.1s ease-out 0.1s;
   &:hover {
     cursor: pointer;
     border-bottom: solid gray 2px;
@@ -326,11 +359,13 @@ const SearchInput = styled.input`
 `;
 const SearchIcon = styled.button`
   background-color: white;
+  color: #666565;
   border-radius: 100%;
   display: flex;
   justify-content: center;
   width: 2rem;
   height: 2rem;
+  margin-top: 3px;
   margin-left: 0.3rem;
   &:hover {
     cursor: pointer;
@@ -352,7 +387,6 @@ const PlusButton = styled.button`
   }
 `;
 const Feed = styled.div`
-  // 전체피드
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -365,10 +399,9 @@ const Feed = styled.div`
     align-items: center;
   }
 `;
-const Line = styled.div`
-  border: solid gray 1px;
-  height: 2rem;
-  margin-top: 8px;
-  margin-right: 7px;
-  opacity: 0.6;
+
+const Message = styled.div`
+  font-weight: bolder;
+  margin: 3vw;
+  color: #6a6a6a;
 `;

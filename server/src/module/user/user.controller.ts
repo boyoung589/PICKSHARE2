@@ -51,16 +51,13 @@ export class UserController {
     @Req() req: any,
   ): Promise<{ message: string; data?: object; statusCode?: number }> {
     const authcode = req.headers.authcode.slice(6).split('&')[0];
-    console.log(authcode);
     return this.userService.kakaoLogin(authcode);
   }
 
   // 로그아웃
   @Get('/logout')
   @UseGuards(AuthGuard())
-  logout(@Req() req: any) {
-    console.log('req', req);
-  }
+  logout(@Req() req: any) {return}
 
   @Get('/userInfo')
   getUserInfo(
