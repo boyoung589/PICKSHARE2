@@ -59,7 +59,6 @@ export class UserRepository extends Repository<User> {
       await this.save(user);
       const {
         email,
-        password,
         nickname,
         userImage,
         statusMessage,

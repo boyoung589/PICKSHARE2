@@ -13,6 +13,10 @@ const Signup = lazy(() => import('./pages/Signup'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const MainFeed = lazy(() => import('./pages/MainFeed'));
 const UserFeed = lazy(() => import('./pages/UserFeed'));
+<<<<<<< HEAD
+=======
+// const ErrorLoadingPage = lazy(() => import('./pages/ErrorLoadingPage'));
+>>>>>>> 0b0f3caf8e3efa6a30004e66fef7832d64adf679
 const KakaoLoading = lazy(() => import('./pages/KakaoLoading'));
 const DiaryPage = lazy(() => import('./pages/DiaryPage'));
 
